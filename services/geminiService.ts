@@ -94,9 +94,18 @@ export const generateVideo = async (
     }
 
     if (operation.error) {
-      const errorMessage = operation.error.message || 'Unknown error during video generation.';
       console.error("Video generation operation failed:", operation.error);
-      throw new Error(`Video generation failed: ${errorMessage}`);
+      let errorMessage = 'Video generation failed.';
+      
+      if (operation.error.message && typeof operation.error.message === 'string') {
+          errorMessage = operation.error.message;
+      } else {
+          // Fallback for other error object shapes to prevent '[object Object]'.
+          errorMessage = typeof operation.error === 'string' 
+            ? operation.error 
+            : JSON.stringify(operation.error);
+      }
+      throw new Error(errorMessage);
     }
 
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
@@ -108,9 +117,12 @@ export const generateVideo = async (
     throw new Error("Video generation completed, but no download link was found.");
   } catch (error) {
     console.error("Error generating video:", error);
+    // Re-throw the error to be displayed in the UI. 
+    // This avoids adding prefixes like "Failed to generate video:".
     if (error instanceof Error) {
-        throw new Error(`Failed to generate video: ${error.message}. Please check the console for details.`);
+        throw error;
     }
-    throw new Error("Failed to generate video due to an unknown error. Please check the console for details.");
+    // Fallback for non-Error objects being thrown.
+    throw new Error("An unknown error occurred while generating the video.");
   }
 };
