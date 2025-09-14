@@ -1,0 +1,5 @@
+{
+  "name": "AI Photo Studio",
+  "description": "An AI-powered application to generate new images and videos from text prompts, and edit existing photos with descriptive instructions. Utilizes Gemini API for state-of-the-art image creation, video generation, and manipulation.",
+  "requestFramePermissions": []
+}
