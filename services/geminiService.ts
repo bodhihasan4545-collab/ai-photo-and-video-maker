@@ -7,7 +7,7 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const generateImage = async (prompt: string): Promise<string> => {
+export const generateImage = async (prompt: string, aspectRatio: string): Promise<string> => {
   try {
     const response = await ai.models.generateImages({
       model: 'imagen-4.0-generate-001',
@@ -15,7 +15,7 @@ export const generateImage = async (prompt: string): Promise<string> => {
       config: {
         numberOfImages: 1,
         outputMimeType: 'image/png',
-        aspectRatio: '1:1',
+        aspectRatio: aspectRatio,
       },
     });
 
@@ -67,22 +67,33 @@ export const editImage = async (
   }
 };
 
+export interface VideoGenerationConfig {
+    aspectRatio: string;
+    duration: number;
+    image?: { 
+        imageBase64: string; 
+        mimeType: string 
+    };
+}
+
 export const generateVideo = async (
   prompt: string,
-  image?: { imageBase64: string; mimeType: string }
+  config: VideoGenerationConfig
 ): Promise<string> => {
   try {
     const videoParams: any = {
         model: 'veo-2.0-generate-001',
         prompt,
         config: {
-            numberOfVideos: 1
+            numberOfVideos: 1,
+            aspectRatio: config.aspectRatio,
+            durationSecs: config.duration,
         }
     };
-    if (image) {
+    if (config.image) {
         videoParams.image = {
-            imageBytes: image.imageBase64,
-            mimeType: image.mimeType
+            imageBytes: config.image.imageBase64,
+            mimeType: config.image.mimeType
         };
     }
 
@@ -111,18 +122,22 @@ export const generateVideo = async (
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
 
     if (downloadLink) {
-      return downloadLink;
+      // FIX: Fetch the video within the service to avoid exposing the API key to the client.
+      // Return a blob URL that can be used directly in the video player.
+      const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch video: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
     }
 
     throw new Error("Video generation completed, but no download link was found.");
   } catch (error) {
     console.error("Error generating video:", error);
-    // Re-throw the error to be displayed in the UI. 
-    // This avoids adding prefixes like "Failed to generate video:".
     if (error instanceof Error) {
         throw error;
     }
-    // Fallback for non-Error objects being thrown.
     throw new Error("An unknown error occurred while generating the video.");
   }
 };

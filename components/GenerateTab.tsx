@@ -3,8 +3,11 @@ import { generateImage } from '../services/geminiService';
 import { Spinner } from './Spinner';
 import { Icon } from './Icon';
 
+const aspectRatios = ["1:1", "16:9", "9:16", "4:3", "3:4"];
+
 export const GenerateTab: React.FC = () => {
   const [prompt, setPrompt] = useState<string>('');
+  const [aspectRatio, setAspectRatio] = useState<string>(aspectRatios[0]);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +22,7 @@ export const GenerateTab: React.FC = () => {
     setGeneratedImage(null);
 
     try {
-      const imageBase64 = await generateImage(prompt);
+      const imageBase64 = await generateImage(prompt, aspectRatio);
       setGeneratedImage(`data:image/png;base64,${imageBase64}`);
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
@@ -41,20 +44,40 @@ export const GenerateTab: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="space-y-2">
-        <label htmlFor="prompt-generate" className="text-sm font-medium text-gray-300">
-          Describe the image you want to create
-        </label>
-        <textarea
-          id="prompt-generate"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="e.g., A majestic lion wearing a crown, photorealistic style"
-          className="w-full h-24 p-3 bg-base-300 border border-base-300 rounded-lg text-content focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition duration-200 ease-in-out"
-          disabled={isLoading}
-          aria-label="Image generation prompt"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 space-y-2">
+          <label htmlFor="prompt-generate" className="text-sm font-medium text-gray-300">
+            Describe the image you want to create
+          </label>
+          <textarea
+            id="prompt-generate"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., A majestic lion wearing a crown, photorealistic style"
+            className="w-full h-24 p-3 bg-base-300 border border-base-300 rounded-lg text-content focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition duration-200 ease-in-out"
+            disabled={isLoading}
+            aria-label="Image generation prompt"
+          />
+        </div>
+        <div className="space-y-2">
+            <label htmlFor="aspect-ratio-generate" className="text-sm font-medium text-gray-300">
+                Aspect Ratio
+            </label>
+            <select
+                id="aspect-ratio-generate"
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value)}
+                className="w-full p-3 bg-base-300 border border-base-300 rounded-lg text-content focus:ring-2 focus:ring-brand-primary focus:border-brand-primary transition duration-200 ease-in-out h-24"
+                disabled={isLoading}
+                aria-label="Image aspect ratio"
+            >
+                {aspectRatios.map(ratio => (
+                    <option key={ratio} value={ratio}>{ratio}</option>
+                ))}
+            </select>
+        </div>
       </div>
+
 
       <button
         onClick={handleGenerate}
